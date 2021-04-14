@@ -1,121 +1,70 @@
 from flask import Flask, redirect, render_template, request, url_for
+from flask_sqlalchemy import SQLAlchemy
+import os
+
 
 app = Flask(__name__)
-
-Personas = {
-    'usuario': [
-        {
-            "id": 1,
-            "nombre": "Mariano",
-            "password": "password123",
-            "tipo": 1,
-            "materias": [1, 2]
-        },
-        {
-            "id": 2,
-            "nombre": "Pablo",
-            "password": "password_123",
-            "tipo": 1,
-            "materias": [1, 3]
-        },
-        {
-            "id": 3,
-            "nombre": "Carla",
-            "password": "carla_4",
-            "tipo": 1,
-            "materias": [1, 3, 2]
-        },
-        {
-            "id": 4,
-            "nombre": "Maria",
-            "password": "mariapaz123",
-            "tipo": 1,
-            "materias": [1, 2]
-        },
-        {
-            "id": 5,
-            "nombre": "Pedro",
-            "password": "lemo_444",
-            "tipo": 1,
-            "materias": [1, 2]
-        },
-        {
-            "id": 6,
-            "nombre": "Pablo",
-            "password": "Onur",
-            "tipo": 1,
-            "materias": [3, 2, 4]
-        }
-    ],
-    'tipo': [
-        {
-            "id": 1,
-            "tipo": "Alumno"
-        }
-    ],
-    'Materias': [
-        {
-            "id": 1,
-            "materia": "Programacion 1"
-        },
-        {
-            "id": 2,
-            "materia": "Lengua"
-        },
-        {
-            "id": 3,
-            "materia": "Programacion 2"
-        },
-        {
-            "id": 4,
-            "materia": "Base de Datos"
-        },
-    ]
-}
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://root:{os.environ["PWBD"]}@{os.environ["HOSTBD"]}/{os.environ["NAMEBD"]}' # noqa
+db = SQLAlchemy(app)
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    in_bd = False
-    username = None
-    materias = list()
-    if request.method == 'POST':
-        for persona in Personas['usuario']:
-            print("gola")
-            if persona['nombre'] == request.form['username'] and \
-                    persona['password'] == request.form['password']:
-                in_bd = True
-                username = persona['nombre']
-                for materia in persona['materias']:
-                    for materias_data in Personas['Materias']:
-                        if materia == materias_data['id']:
-                            materias.append(materias_data)
-        if in_bd:
-            return render_template('home.html',
-                                   usuario=username,
-                                   materias=materias)
-    if request.method == 'GET':
-        return render_template('login.html')
-    return render_template('login.html', error="No se encuentra el usuario")
+from models import Marcas, Persona, PersonaVehiculo, Vehiculo
 
 
-@app.route('/materia/<int:id>')
-def get_alumnos(id):
-    alumnos = [alumno for alumno in Personas['usuario'] if id in alumno['materias']]
-    nombre_clase = "none"
-    for materia in Personas['Materias']:
-        if materia['id'] == id:
-            nombre_clase = materia['materia']
-    return render_template('lista_alumnos.html', alumnos=alumnos,
-                           nombre_clase=nombre_clase)
+@app.route('/', methods=['GET', 'POST'])
+def home():
+    return render_template('home.html', data=dict())
 
 
-@app.route('/home')
-def home(username: str, materias: list):
-    if not username:
-        return redirect(url_for('login'))
-    return render_template('home.html', usuario=username, materias=materias)
+marcas = db.session.query(Marcas).all()
+
+print("hola")
+#for marca in Marcas:
+#    print (marca.idMarca)
+#    print (marca.nombreMarca)
 
 
-if __name__ == '__main__':
-    app.run()
+##agregar una nueva marca
+nueva_marca=(Marcas(nombre='Audi'))
+db.session.add(nueva_marca)
+db.session.commit()
+
+
+##Buscar por parametro
+Marca_por_nombre=db.session.query(Marcas).filter(Marcas.nombre=='Ford').first()
+print(Marca_por_nombre.id, Marca_por_nombre.nombre)
+
+#Borrar registro
+
+#Marca_a_borrar=db.session.query(Marca).filter(Marca.nombreMarca=='Audi').first()
+#db.session.delete(Marca_a_borrar)
+#db.session.commit()
+
+#Editar un Registro
+Editar_registro=db.session.query(Marca).filter(Marca.idMarca=='2').first()
+Editar_registro.nombreMarca='Zanella'
+db.session.commit()
+
+
+Vehiculos=db.session.query(Vehiculo).all()
+
+#Joins con Alchemy
+VehiculoMarca=db.session.query(Marca,Vehiculo).join(Vehiculo,Vehiculo.idMarca==Marca.idMarca).filter(Marca.nombreMarca=='Zanella').all()
+for vehiculo in VehiculoMarca:
+    print(vehiculo.Vehiculo.nombreVehiculo)
+    print(vehiculo.Marca.nombreMarca)
+
+
+
+#Obtener el listado de personas
+
+#Obtener modelos de los vehiculos < 2019
+
+#Obtener todos los vehiculos de la marca Fiat
+
+#Obtener los modelos de los vehiculo de la marca Fiat
+
+#Obtener todas las personas que tengan un Ford
+
+
+#Borrar Chevrolet
